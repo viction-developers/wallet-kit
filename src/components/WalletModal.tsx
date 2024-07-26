@@ -1,24 +1,24 @@
-// src/components/WalletModal.tsx
-import React from 'react';
-import Modal from 'react-modal';
-import { motion } from 'framer-motion';
-import styled from '@emotion/styled';
+import React from "react";
+import Modal from "react-modal";
+import { motion } from "framer-motion";
+import styled from "@emotion/styled";
+import { EIP6963ProviderDetail } from "../utils/types";
 
 const customStyles = {
   content: {
-    top: '50%',
-    left: '50%',
-    right: 'auto',
-    bottom: 'auto',
-    marginRight: '-50%',
-    transform: 'translate(-50%, -50%)',
-    border: 'none',
-    borderRadius: '8px',
-    padding: '0',
-    overflow: 'hidden',
+    top: "50%",
+    left: "50%",
+    right: "auto",
+    bottom: "auto",
+    marginRight: "-50%",
+    transform: "translate(-50%, -50%)",
+    border: "none",
+    borderRadius: "8px",
+    padding: "0",
+    overflow: "hidden",
   },
   overlay: {
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    backgroundColor: "rgba(0, 0, 0, 0.75)",
   },
 };
 
@@ -52,15 +52,31 @@ const Button = styled.button`
   }
 `;
 
+const WalletItem = styled.div`
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+`;
+
+const WalletIcon = styled.img`
+  width: 32px;
+  height: 32px;
+  margin-right: 10px;
+`;
+
 interface WalletModalProps {
   isOpen: boolean;
   onRequestClose: () => void;
-  connectWallet: () => void;
+  wallets: EIP6963ProviderDetail[];
+  sponsorWallets: EIP6963ProviderDetail[];
+  connectWallet: (wallet: EIP6963ProviderDetail) => void;
 }
 
 const WalletModal: React.FC<WalletModalProps> = ({
   isOpen,
   onRequestClose,
+  wallets,
+  sponsorWallets,
   connectWallet,
 }) => {
   return (
@@ -77,7 +93,33 @@ const WalletModal: React.FC<WalletModalProps> = ({
       >
         <Container>
           <Header>Connect Your Wallet</Header>
-          <Button onClick={connectWallet}>Connect MetaMask</Button>
+
+          <h4> Sponsor Wallet</h4>
+          {sponsorWallets.length > 0 ? (
+            sponsorWallets.map((wallet) => (
+              <WalletItem key={wallet.info.uuid}>
+                <WalletIcon src={wallet.info.icon} alt={wallet.info.name} />
+                <Button onClick={() => connectWallet(wallet)}>
+                  Connect {wallet.info.name}
+                </Button>
+              </WalletItem>
+            ))
+          ) : (
+            <p>No wallets detected</p>
+          )}
+          <h4> Another Wallet</h4>
+          {wallets.length > 0 ? (
+            wallets.map((wallet) => (
+              <WalletItem key={wallet.info.uuid}>
+                <WalletIcon src={wallet.info.icon} alt={wallet.info.name} />
+                <Button onClick={() => connectWallet(wallet)}>
+                  Connect {wallet.info.name}
+                </Button>
+              </WalletItem>
+            ))
+          ) : (
+            <p>No wallets detected</p>
+          )}
           <Button onClick={onRequestClose}>Cancel</Button>
         </Container>
       </motion.div>
