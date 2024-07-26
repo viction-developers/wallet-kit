@@ -1,4 +1,3 @@
-import { createPublicClient, http } from "viem";
 import { Chain } from "viem/chains";
 
 const VictionMainnet: Chain = {
@@ -41,12 +40,12 @@ const VictionTestnet: Chain = {
   testnet: true,
 };
 
-export const networks: any = {
+export const supportNetworks: Record<NETWORK, Chain> = {
   MAINNET: VictionMainnet,
   TESTNET: VictionTestnet,
 };
 
-export const client = createPublicClient({
-  chain: VictionMainnet,
-  transport: http(),
-});
+export enum NETWORK {
+  MAINNET = "MAINNET",
+  TESTNET = "TESTNET",
+}

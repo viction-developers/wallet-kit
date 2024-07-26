@@ -1,10 +1,24 @@
-// src/components/ConnectButton.tsx
-import React, { useState } from 'react';
-import MetaMaskConnector from '../connectors/MetaMaskConnector';
-import WalletModal from './WalletModal';
-import styled from '@emotion/styled';
+import React, { useState, useEffect, useCallback } from "react";
+import WalletModal from "./WalletModal";
+import styled from "@emotion/styled";
+import WalletConnector from "../connectors/WalletConnector";
+import { useWalletProviders } from "../connectors/WalletProviders";
+import { EIP6963ProviderDetail } from "../utils/types";
+import { Chain } from "viem";
 
-const ConnectButtonStyled = styled.button`
+interface ConnectButtonProps {
+  connector: WalletConnector;
+  connectedAccount?: string | null;
+  supportedChains?: Record<number, Chain> | undefined;
+  onConnect?: (provider: EIP6963ProviderDetail | undefined) => void;
+  onDisconnect?: () => void;
+  onAccountChanged?: (account: string) => void;
+  onChainChanged?: (chainInfo: Chain) => void;
+  onError?: (error: string) => void;
+  style?: React.CSSProperties; // Add style prop for custom styles
+}
+
+const ConnectButtonStyled = styled.button<React.CSSProperties>`
   padding: 10px 20px;
   font-size: 16px;
   border: none;
@@ -16,53 +30,76 @@ const ConnectButtonStyled = styled.button`
   &:hover {
     background-color: #2563eb;
   }
+
+  ${(props) => props.style && { ...props.style }}// Apply custom styles
 `;
 
-const AccountInfo = styled.div`
-  text-align: center;
-
-  p {
-    margin: 5px 0;
-  }
-`;
-
-const ErrorMessage = styled.div`
-  color: red;
-  margin-top: 10px;
-`;
-
-const ConnectButton: React.FC = () => {
-  const [account, setAccount] = useState<string | null>(null);
-  const [balance, setBalance] = useState<string | null>(null);
+const ConnectButton: React.FC<ConnectButtonProps> = ({
+  connector,
+  connectedAccount,
+  supportedChains,
+  onConnect,
+  onDisconnect,
+  onAccountChanged,
+  onChainChanged,
+  onError,
+  style,
+}) => {
+  const { providerDetails } = useWalletProviders();
+  const { sponsorWallets } = useWalletProviders();
   const [modalIsOpen, setModalIsOpen] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-  const connector = new MetaMaskConnector();
 
-  const connectWallet = async () => {
+  const modifyProviders = useCallback(
+    (provider: EIP6963ProviderDetail) => {
+      const updatedProviders = providerDetails.map((p) =>
+        p.info.uuid === provider.info.uuid ? provider : p
+      );
+      console.log("updateProviders", updatedProviders);
+      // You may want to update the state with the modified providers if necessary
+      // setProviderDetails(updatedProviders);
+    },
+    [providerDetails]
+  );
+
+  const connectWallet = async (wallet: EIP6963ProviderDetail) => {
     try {
-      await connector.connect();
-      const acc = await connector.getAccount();
-      setAccount(acc);
-      const bal = await connector.getBalance(acc);
-      setBalance(bal);
+      const chainInfo = connector.getChainInfo();
+      const chainID = (await wallet.provider.request({
+        method: "eth_chainId",
+      })) as string;
+
+      const chainIdNumber = parseInt(chainID, 16);
+      console.log("chainIdNumber", chainIdNumber);
+      console.log("chainInfo.id", chainInfo.id);
+      // Find the chain configuration using the chainId
+      if (chainInfo.id === chainIdNumber) {
+        onConnect && onConnect(wallet);
+      } else {
+        try {
+          await connector.connect(wallet);
+          await connector.switchChain(chainInfo.id);
+          onConnect && onConnect(wallet);
+        } catch (error) {
+          throw error;
+        }
+      }
       closeModal();
     } catch (error: any) {
-      if (error.message === 'User rejected the request.') {
-        setError('Connection request was rejected by the user.');
+      closeModal();
+      if (error.code === 4001) {
+        onError && onError(error.message);
       } else {
-        setError(error.message);
+        onError && onError(error);
       }
     }
   };
 
   const disconnectWallet = () => {
     connector.disconnect();
-    setAccount(null);
-    setBalance(null);
+    onDisconnect && onDisconnect();
   };
 
   const openModal = () => {
-    setError(null); // Clear previous errors
     setModalIsOpen(true);
   };
 
@@ -70,27 +107,52 @@ const ConnectButton: React.FC = () => {
     setModalIsOpen(false);
   };
 
+  useEffect(() => {
+    providerDetails.forEach((provider) => {
+      if (!provider.provider) return;
+      const currentProvider = provider.provider;
+      currentProvider.on("accountsChanged", (accounts: string[]) => {
+        modifyProviders(provider);
+        if (accounts.length > 0) {
+          onAccountChanged && onAccountChanged(accounts[0]);
+        } else {
+          disconnectWallet();
+        }
+      });
+      currentProvider.on("chainChanged", async (chainID: string) => {
+        const chainIdNumber = parseInt(chainID, 16);
+        const chainInfo = connector.getChainInfo();
+        if (chainInfo.id === chainIdNumber) {
+          onChainChanged && onChainChanged(chainInfo);
+        } else {
+          onError && onError("Unknown chain ID or configuration not found.");
+        }
+      });
+      currentProvider.on("disconnect", (error: Error) => {
+        onError && onError("Wallet disconnected.");
+        disconnectWallet();
+      });
+    });
+  }, [providerDetails, modifyProviders, supportedChains]);
+
   return (
     <div>
-      {account ? (
-        <AccountInfo>
-          <p>Account: {account}</p>
-          <p>Balance: {balance} ETH</p>
-          <ConnectButtonStyled onClick={disconnectWallet}>
-            Disconnect
-          </ConnectButtonStyled>
-        </AccountInfo>
+      {connectedAccount ? (
+        <ConnectButtonStyled style={style} onClick={disconnectWallet}>
+          Disconnect
+        </ConnectButtonStyled>
       ) : (
         <div>
-          <ConnectButtonStyled onClick={openModal}>
+          <ConnectButtonStyled style={style} onClick={openModal}>
             Connect Wallet
           </ConnectButtonStyled>
-          {error && <ErrorMessage>{error}</ErrorMessage>}
         </div>
       )}
       <WalletModal
         isOpen={modalIsOpen}
         onRequestClose={closeModal}
+        wallets={providerDetails}
+        sponsorWallets={sponsorWallets}
         connectWallet={connectWallet}
       />
     </div>
