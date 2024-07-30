@@ -123,7 +123,7 @@ const App: React.FC = () => {
       }
     };
     loadData();
-  }, [chain, wallet]);
+  }, [chain, wallet, account, balance]);
 
   const handleConnect = async (wallet: EIP6963ProviderDetail | undefined) => {
     try {
@@ -188,10 +188,8 @@ const App: React.FC = () => {
   };
 
   const buttonStyle = {
-    backgroundColor: "green",
+    background: "linear-gradient(135deg, #36d1dc, #5b86e5)",
     color: "white",
-    padding: "15px 30px",
-    fontSize: "18px",
   };
 
   return (
@@ -228,7 +226,7 @@ const App: React.FC = () => {
               onAccountChanged={handleAccountChanged}
               onChainChanged={handleChainChanged}
               onError={handleError}
-              style={buttonStyle}
+              // style={buttonStyle} // Active if modifier button style.
             />
           </WalletProvider>
         </Container>

@@ -19,19 +19,36 @@ interface ConnectButtonProps {
 }
 
 const ConnectButtonStyled = styled.button<React.CSSProperties>`
-  padding: 10px 20px;
+  padding: 12px 24px;
   font-size: 16px;
+  font-weight: 600;
   border: none;
-  border-radius: 4px;
+  border-radius: 12px;
   cursor: pointer;
-  background-color: #3b82f6;
+  background: linear-gradient(135deg, #ff5f6d, #ffc371); /* Vibrant gradient */
   color: white;
+  transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
   &:hover {
-    background-color: #2563eb;
+    background: linear-gradient(135deg, #ff4b5c, #ffa836);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
   }
 
-  ${(props) => props.style && { ...props.style }}// Apply custom styles
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+
+  ${(props) => props.style && { ...props.style }}// Allow custom styles
 `;
 
 const ConnectButton: React.FC<ConnectButtonProps> = ({
@@ -69,23 +86,17 @@ const ConnectButton: React.FC<ConnectButtonProps> = ({
       })) as string;
 
       const chainIdNumber = parseInt(chainID, 16);
-      console.log("chainIdNumber", chainIdNumber);
-      console.log("chainInfo.id", chainInfo.id);
       // Find the chain configuration using the chainId
       if (chainInfo.id === chainIdNumber) {
         onConnect && onConnect(wallet);
       } else {
-        try {
-          await connector.connect(wallet);
-          await connector.switchChain(chainInfo.id);
-          onConnect && onConnect(wallet);
-        } catch (error) {
-          throw error;
-        }
+        await connector.connect(wallet);
+        await connector.switchChain(chainInfo.id);
+        onConnect && onConnect(wallet);
       }
-      closeModal();
+      setModalIsOpen(false); // Ensure this state update is wrapped in act in tests
     } catch (error: any) {
-      closeModal();
+      setModalIsOpen(false);
       if (error.code === 4001) {
         onError && onError(error.message);
       } else {
@@ -99,40 +110,41 @@ const ConnectButton: React.FC<ConnectButtonProps> = ({
     onDisconnect && onDisconnect();
   };
 
-  const openModal = () => {
-    setModalIsOpen(true);
-  };
-
-  const closeModal = () => {
-    setModalIsOpen(false);
-  };
+  const openModal = () => setModalIsOpen(true);
+  const closeModal = () => setModalIsOpen(false);
 
   useEffect(() => {
-    providerDetails.forEach((provider) => {
-      if (!provider.provider) return;
-      const currentProvider = provider.provider;
-      currentProvider.on("accountsChanged", (accounts: string[]) => {
-        modifyProviders(provider);
-        if (accounts.length > 0) {
-          onAccountChanged && onAccountChanged(accounts[0]);
-        } else {
+    if (!providerDetails) return;
+    try {
+      providerDetails.forEach((provider) => {
+        if (!provider.provider) return;
+        const currentProvider = provider.provider;
+        currentProvider.on("accountsChanged", (accounts: string[]) => {
+          modifyProviders(provider);
+          if (accounts.length > 0) {
+            onAccountChanged && onAccountChanged(accounts[0]);
+          } else {
+            disconnectWallet();
+          }
+        });
+
+        currentProvider.on("chainChanged", async (chainID: string) => {
+          const chainIdNumber = parseInt(chainID, 16);
+          const chainInfo = connector.getChainInfo();
+          if (chainInfo.id === chainIdNumber) {
+            onChainChanged && onChainChanged(chainInfo);
+          } else {
+            onError && onError("Unknown chain ID or configuration not found.");
+          }
+        });
+        currentProvider.on("disconnect", (error: Error) => {
+          onError && onError("Wallet disconnected.");
           disconnectWallet();
-        }
+        });
       });
-      currentProvider.on("chainChanged", async (chainID: string) => {
-        const chainIdNumber = parseInt(chainID, 16);
-        const chainInfo = connector.getChainInfo();
-        if (chainInfo.id === chainIdNumber) {
-          onChainChanged && onChainChanged(chainInfo);
-        } else {
-          onError && onError("Unknown chain ID or configuration not found.");
-        }
-      });
-      currentProvider.on("disconnect", (error: Error) => {
-        onError && onError("Wallet disconnected.");
-        disconnectWallet();
-      });
-    });
+    } catch (error) {
+      throw error;
+    }
   }, [providerDetails, modifyProviders, supportedChains]);
 
   return (
@@ -151,8 +163,8 @@ const ConnectButton: React.FC<ConnectButtonProps> = ({
       <WalletModal
         isOpen={modalIsOpen}
         onRequestClose={closeModal}
-        wallets={providerDetails}
-        sponsorWallets={sponsorWallets}
+        wallets={providerDetails || []}
+        sponsorWallets={sponsorWallets || []}
         connectWallet={connectWallet}
       />
     </div>

@@ -62,7 +62,6 @@ class WalletConnector implements WalletConnectorInterface {
 
   handleNewProviderDetail(newProviderDetail: EIP6963ProviderDetail) {
     if (!this.existsProviderDetail(newProviderDetail)) {
-      console.log(newProviderDetail?.info?.rdns);
       if (newProviderDetail?.info?.rdns == "world.abstraction.wallet") {
         this.sponsorProviders.push(newProviderDetail);
       } else {
@@ -144,9 +143,13 @@ class WalletConnector implements WalletConnectorInterface {
     }
   }
 
-  disconnect(): void {
-    this.provider = undefined;
-    this.walletClient = undefined;
+  async disconnect(): Promise<void> {
+    try {
+      this.provider = undefined;
+      this.walletClient = undefined;
+    } catch (error) {
+      throw error;
+    }
   }
 
   async getAccount(): Promise<string> {
