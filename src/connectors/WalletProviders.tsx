@@ -13,7 +13,7 @@ const WalletProviderContext = createContext<
   WalletProviderContextType | undefined
 >(undefined);
 
-export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
+const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [providerDetails, setProviderDetails] = useState<
@@ -49,10 +49,12 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({
   );
 };
 
-export const useWalletProviders = () => {
+const useWalletProviders = () => {
   const context = useContext(WalletProviderContext);
   if (!context) {
     throw new Error("useWalletProviders must be used within a WalletProvider");
   }
   return context;
 };
+
+export { WalletProvider, useWalletProviders };

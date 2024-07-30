@@ -3,7 +3,7 @@ import { Chain } from "viem";
 export interface WalletConnectorInterface {
   detectChain(): Promise<Chain | undefined>;
   connect(wallet: EIP6963ProviderDetail): Promise<void>;
-  disconnect(): void;
+  disconnect(): Promise<void>;
   getAccount(): Promise<string>;
   getBalance(account: string): Promise<string>;
   sendTransaction(tx: any): Promise<any>;

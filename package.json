@@ -1,9 +1,10 @@
 {
-  "name": "viction-kit",
-  "version": "0.0.5",
+  "name": "@viction-kit/wallet-kit",
+  "version": "0.0.1",
   "description": "",
   "main": "index.js",
   "scripts": {
+    "test": "jest",
     "start": "webpack serve --mode development",
     "build": "webpack --mode production"
   },
@@ -11,6 +12,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@abstraction-hq/wallet-sdk": "^1.0.7",
     "@emotion/react": "^11.13.0",
     "@emotion/styled": "^11.13.0",
     "@types/react": "^18.3.3",
@@ -20,12 +22,20 @@
     "react-dom": "^18.3.1",
     "react-modal": "^3.16.1",
     "typescript": "^5.5.3",
-    "viem": "^2.17.9",
-    "@abstraction-hq/wallet-sdk": "^1.0.7"
+    "util": "^0.12.5",
+    "viem": "^2.17.9"
   },
   "devDependencies": {
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/jest-dom": "^6.4.8",
+    "@testing-library/react": "^16.0.0",
+    "@testing-library/user-event": "^14.5.2",
+    "@types/jest": "^29.5.12",
     "@types/react-modal": "^3.16.3",
     "html-webpack-plugin": "^5.6.0",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "ts-jest": "^29.2.3",
     "ts-loader": "^9.2.3",
     "webpack": "^5.51.1",
     "webpack-cli": "^4.8.0",

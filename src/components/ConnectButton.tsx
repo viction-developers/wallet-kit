@@ -86,23 +86,17 @@ const ConnectButton: React.FC<ConnectButtonProps> = ({
       })) as string;
 
       const chainIdNumber = parseInt(chainID, 16);
-      console.log("chainIdNumber", chainIdNumber);
-      console.log("chainInfo.id", chainInfo.id);
       // Find the chain configuration using the chainId
       if (chainInfo.id === chainIdNumber) {
         onConnect && onConnect(wallet);
       } else {
-        try {
-          await connector.connect(wallet);
-          await connector.switchChain(chainInfo.id);
-          onConnect && onConnect(wallet);
-        } catch (error) {
-          throw error;
-        }
+        await connector.connect(wallet);
+        await connector.switchChain(chainInfo.id);
+        onConnect && onConnect(wallet);
       }
-      closeModal();
+      setModalIsOpen(false); // Ensure this state update is wrapped in act in tests
     } catch (error: any) {
-      closeModal();
+      setModalIsOpen(false);
       if (error.code === 4001) {
         onError && onError(error.message);
       } else {
@@ -116,40 +110,41 @@ const ConnectButton: React.FC<ConnectButtonProps> = ({
     onDisconnect && onDisconnect();
   };
 
-  const openModal = () => {
-    setModalIsOpen(true);
-  };
-
-  const closeModal = () => {
-    setModalIsOpen(false);
-  };
+  const openModal = () => setModalIsOpen(true);
+  const closeModal = () => setModalIsOpen(false);
 
   useEffect(() => {
-    providerDetails.forEach((provider) => {
-      if (!provider.provider) return;
-      const currentProvider = provider.provider;
-      currentProvider.on("accountsChanged", (accounts: string[]) => {
-        modifyProviders(provider);
-        if (accounts.length > 0) {
-          onAccountChanged && onAccountChanged(accounts[0]);
-        } else {
+    if (!providerDetails) return;
+    try {
+      providerDetails.forEach((provider) => {
+        if (!provider.provider) return;
+        const currentProvider = provider.provider;
+        currentProvider.on("accountsChanged", (accounts: string[]) => {
+          modifyProviders(provider);
+          if (accounts.length > 0) {
+            onAccountChanged && onAccountChanged(accounts[0]);
+          } else {
+            disconnectWallet();
+          }
+        });
+
+        currentProvider.on("chainChanged", async (chainID: string) => {
+          const chainIdNumber = parseInt(chainID, 16);
+          const chainInfo = connector.getChainInfo();
+          if (chainInfo.id === chainIdNumber) {
+            onChainChanged && onChainChanged(chainInfo);
+          } else {
+            onError && onError("Unknown chain ID or configuration not found.");
+          }
+        });
+        currentProvider.on("disconnect", (error: Error) => {
+          onError && onError("Wallet disconnected.");
           disconnectWallet();
-        }
+        });
       });
-      currentProvider.on("chainChanged", async (chainID: string) => {
-        const chainIdNumber = parseInt(chainID, 16);
-        const chainInfo = connector.getChainInfo();
-        if (chainInfo.id === chainIdNumber) {
-          onChainChanged && onChainChanged(chainInfo);
-        } else {
-          onError && onError("Unknown chain ID or configuration not found.");
-        }
-      });
-      currentProvider.on("disconnect", (error: Error) => {
-        onError && onError("Wallet disconnected.");
-        disconnectWallet();
-      });
-    });
+    } catch (error) {
+      throw error;
+    }
   }, [providerDetails, modifyProviders, supportedChains]);
 
   return (
@@ -168,8 +163,8 @@ const ConnectButton: React.FC<ConnectButtonProps> = ({
       <WalletModal
         isOpen={modalIsOpen}
         onRequestClose={closeModal}
-        wallets={providerDetails}
-        sponsorWallets={sponsorWallets}
+        wallets={providerDetails || []}
+        sponsorWallets={sponsorWallets || []}
         connectWallet={connectWallet}
       />
     </div>
