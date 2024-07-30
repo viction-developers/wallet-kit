@@ -19,19 +19,36 @@ interface ConnectButtonProps {
 }
 
 const ConnectButtonStyled = styled.button<React.CSSProperties>`
-  padding: 10px 20px;
+  padding: 12px 24px;
   font-size: 16px;
+  font-weight: 600;
   border: none;
-  border-radius: 4px;
+  border-radius: 12px;
   cursor: pointer;
-  background-color: #3b82f6;
+  background: linear-gradient(135deg, #ff5f6d, #ffc371); /* Vibrant gradient */
   color: white;
+  transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
   &:hover {
-    background-color: #2563eb;
+    background: linear-gradient(135deg, #ff4b5c, #ffa836);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
   }
 
-  ${(props) => props.style && { ...props.style }}// Apply custom styles
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+
+  ${(props) => props.style && { ...props.style }}// Allow custom styles
 `;
 
 const ConnectButton: React.FC<ConnectButtonProps> = ({

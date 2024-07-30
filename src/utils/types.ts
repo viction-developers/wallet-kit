@@ -10,6 +10,15 @@ export interface WalletConnectorInterface {
   getProviderDetails(): EIP6963ProviderDetail[];
   // getCurrentChain(): Chain | null;
 }
+
+export interface WalletModalProps {
+  isOpen: boolean;
+  onRequestClose: () => void;
+  wallets: EIP6963ProviderDetail[];
+  sponsorWallets: EIP6963ProviderDetail[];
+  connectWallet: (wallet: EIP6963ProviderDetail) => void;
+}
+
 export interface EIP1193Provider {
   request: (payload: {
     method: string;
