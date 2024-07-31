@@ -86,7 +86,3 @@ The `ConnectButton` component accepts the following props:
 ## License
 
 ISC
-
-## Author
-
-Endale Dinh
