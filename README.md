@@ -1,100 +1,92 @@
+
 # @viction-developers/wallet-kit
 
-**Version:** 0.0.1  
-**Author:** @viction-developers  
-**License:** ISC
+## Description
 
-A wallet kit for Viction-based applications, providing an easy way to integrate wallet functionalities into your React applications.
-
-## Features
-
-- **Wallet Connection:** Easily connect to wallets using the `ConnectButton` component.
-- **Chain Support:** Built-in support for Viction Mainnet and Testnet.
-- **Account and Balance Management:** Display account information and balances.
-- **Error Handling:** Graceful handling of errors and chain changes.
+A wallet kit for Viction-based applications, providing an easy-to-use interface for connecting to Web3 wallets in React applications.
 
 ## Installation
 
-Install the package using npm:
-
-```shell
+```bash
 npm install @viction-developers/wallet-kit
 ```
 
 ## Usage
 
-Basic Example
+To use the Wallet Kit, wrap your component tree with the `WalletProvider` and include the `ConnectButton` component.
 
-Here’s a basic example of how to use the wallet kit in your React application:
-```ts
-import React, { useEffect, useState } from "react";
-import { ConnectButton, WalletProvider, WalletConnector, NETWORK } from "@viction-developers/wallet-kit";
-import styled from "styled-components";
-
-const Container = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100vh;
-  background-color: #f3f4f6;
-`;
+```tsx
+import React, { useState, useEffect } from "react";
+import { WalletProvider, ConnectButton, WalletConnector } from "@viction-developers/wallet-kit";
+import { NETWORK } from "@viction-developers/wallet-kit/chains";
 
 const App: React.FC = () => {
   const [account, setAccount] = useState<string | null>(null);
-  const [balance, setBalance] = useState<string | null>(null);
-  const [chain, setChain] = useState<Chain | undefined>(undefined);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [connector] = useState<WalletConnector>(
-    new WalletConnector(NETWORK.MAINNET)
-  );
+  const [connector] = useState<WalletConnector>(new WalletConnector(NETWORK.MAINNET));
 
-  useEffect(() => {
-    // Simulate loading effect
-    setTimeout(() => setLoading(false), 3000);
-  }, []);
-
-  const handleConnect = async (wallet: EIP6963ProviderDetail | undefined) => {
+  const handleConnect = async (wallet: any) => {
     try {
-      if (!connector.isConnected()) {
-        await connector.connect(wallet!);
-      }
-      const account = await connector.getAccount();
-      const balance = await connector.getBalance(account);
-      setAccount(account);
-      setBalance(balance);
-      setChain(connector.network);
-      setError(null);
+      await connector.connect(wallet);
+      setAccount(await connector.getAccount());
     } catch (error) {
       console.error(error);
-      setError("Failed to connect");
     }
   };
 
   const handleDisconnect = () => {
     setAccount(null);
-    setBalance(null);
-    console.log("Disconnected from wallet");
   };
 
   return (
-    <Container>
-      <WalletProvider>
+    <WalletProvider>
+      <div>
+        {account ? <p>Connected Account: {account}</p> : <p>No account connected</p>}
         <ConnectButton
           connector={connector}
           connectedAccount={account}
           onConnect={handleConnect}
           onDisconnect={handleDisconnect}
-          onAccountChanged={(account) => console.log(`Account changed: ${account}`)}
-          onChainChanged={(chain) => console.log(`Chain changed: ${chain.name}`)}
-          onError={(error) => console.error(`Error: ${error}`)}
         />
-      </WalletProvider>
-    </Container>
+      </div>
+    </WalletProvider>
   );
 };
 
 export default App;
 ```
 
+## Props
+
+The `ConnectButton` component accepts the following props:
+
+- **`connector`**: `WalletConnector` instance.
+  - An instance of the WalletConnector, which handles the connection logic.
+
+- **`connectedAccount`**: `string | null` (Optional)
+  - The currently connected account address. If provided, it will display the connected state.
+
+- **`onConnect`**: `function`
+  - A function that is called when a wallet is successfully connected. The function receives the connected wallet as an argument.
+
+- **`onDisconnect`**: `function`
+  - A function that is called when the wallet is disconnected.
+
+- **`onAccountChanged`**: `function`
+  - A function that is called when the connected account changes. The new account address is passed as an argument.
+
+- **`onChainChanged`**: `function`
+  - A function that is called when the blockchain network (chain) changes. The new chain information is passed as an argument.
+
+- **`onError`**: `function`
+  - A function that is called when an error occurs during the connection process. The error message is passed as an argument.
+
+- **`style`**: `React.CSSProperties` (Optional)
+  - Custom styles for the connect button. This allows overriding the default button styles.
+
+## License
+
+ISC
+
+## Author
+
+Endale Dinh
