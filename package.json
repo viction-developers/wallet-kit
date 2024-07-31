@@ -1,15 +1,21 @@
 {
-  "name": "@viction-kit/wallet-kit",
+  "name": "@viction-developers/wallet-kit",
   "version": "0.0.1",
-  "description": "",
+  "description": "A wallet kit for Viction-based applications",
   "main": "index.js",
   "scripts": {
     "test": "jest",
     "start": "webpack serve --mode development",
     "build": "webpack --mode production"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "wallet",
+    "viction",
+    "kit",
+    "web3",
+    "react"
+  ],
+  "author": "Endale Dinh",
   "license": "ISC",
   "dependencies": {
     "@abstraction-hq/wallet-sdk": "^1.0.7",
